@@ -5,19 +5,124 @@ Date Created:   04/22/2020
 Core command group and commands for TF Bounding Box dataset plugin.
 """
 import click 
+import os
+import shutil
+from ravenml.options import verbose_opt
+from ravenml.utils.question import user_input, cli_spinner, user_confirms
+from ravenml.utils.plugins import fill_basic_metadata
+from rmldatatfbbox.utils.helpers import (default_filter_and_load, construct_all,
+                                         write_label_map)
+from rmldatatfbbox.utils.write_dataset import write_dataset, write_metadata
+from rmldatatfbbox.utils.io_utils import upload_dataset
 
 ### OPTIONS ###
+### OPTIONS: could be used for other plugins###
+name_opt = click.option(
+    '-n', '--name', type=str, 
+    help='First and Last name of user.'
+)
 
+comments_opt = click.option(
+    '--comments', type=str, 
+    help='Comments about the training.'    
+)
+
+dataset_name_opt = click.option(
+    '--dataset-name', type=str,
+    help='Name of dataset being created. Ignored without --no-user.'
+)
+
+kfolds_opt = click.option(
+    '--kfolds', '-k', type=int, default=-1, is_eager=True,
+    help='Number of folds in dataset. Ignored without --no-user.'
+)
+
+upload_opt = click.option(
+    '--upload', type=str, is_eager=True,
+    help='Enter the bucket you would like to upload too. Ignored without --no-user.'
+)
+
+delete_local_opt = click.option(
+    '--delete-local', '-d', 'delete_local', is_flag=True, is_eager=True,
+    help='Enter your first and last name. Ignored without --no-user.'
+)
 
 ### COMMANDS ###
-@click.command(help='TensorFlow Object Detection with bounding boxes.')
-@click.pass_context
-def tf_bbox(ctx):
+# @click.command(help='TensorFlow Object Detection with bounding boxes.')
+# @click.pass_context
+@click.group()
+def tf_bbox():#(ctx):
     pass
     
-# @tf_bbox.command(help='Create a dataset.')
-# def create(ctx):
-#     click.echo("Dataset gets created here.")
+@tf_bbox.command(help='Create a dataset.')
+@verbose_opt
+@name_opt
+@comments_opt
+@dataset_name_opt
+@kfolds_opt
+@upload_opt
+@delete_local_opt
+# Will have additional params, ctx and something like create_dataset: CreateDatasetInput,
+def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int, upload: str,
+           delete_local: bool):
+
+    # Hardcoded Values that are assumed to be inputs
+    data_origin="S3"
+    bucket="skr-images-training"
+    user_folder_selection=("jigsaw_tester",)
+    data_path=None
+
+    # create dataset creation metadata dict and populate with basic information
+    # Probably needs to be a new function in ravenml for dataset creation metadata
+    # Commented out dataset type
+    metadata = {}
+    fill_basic_metadata(metadata, user_folder_selection, name, comments)
+
+    if data_origin == "Local":
+        image_ids, filter_metadata = default_filter_and_load(
+                data_source=data_origin, data_filepath=data_path)
+    else:
+        image_ids, filter_metadata, temp_dir = default_filter_and_load(
+            data_source=data_origin, bucket=bucket, filter_vals=user_folder_selection)
+    
+    # Transformation is Missing
+    transform_metadata = []
+
+    dataset_name = dataset_name if dataset_name else user_input(message="What would you like to name this dataset?")
+                                                # ,validator=FilenameValidator)
+    k_folds_specified = kfolds if kfolds != -1 else user_input(message="How many folds would you like the dataset to have?",
+                                                            #    validator=IntegerValidator,
+                                                               default="5")
+    
+    labeled_images = construct_all(image_ids, temp_dir=temp_dir)
+    cli_spinner("Writing out dataset locally...", write_dataset,list(labeled_images.values()),
+                                                                     custom_dataset_name=dataset_name,
+                                                                     num_folds=int(k_folds_specified))
+    cli_spinner("Writing out metadata locally...", write_metadata,name=dataset_name,
+                                                                  user=name,
+                                                                  comments=comments,
+                                                                  training_type="Bounding_Box",
+                                                                  image_ids=image_ids,
+                                                                  filters=filter_metadata,
+                                                                  transforms=transform_metadata)
+    cli_spinner("Writing out additional files...", write_label_map,dataset_name)
+    cli_spinner("Deleting temp directory...", shutil.rmtree, temp_dir)
+
+    if (upload or user_confirms(message="Would you like to upload the dataset to S3?")):
+        default = ""
+        default = os.getenv('DATASETS_BUCKET_NAME', default)
+        bucket = upload if upload else user_input(message="Which bucket would you like to upload to?", default=default)
+        cli_spinner("Uploading dataset to S3...", upload_dataset, bucket_name=bucket, directory=os.getcwd() + '/dataset/' + dataset_name)
+
+    if (dataset_name != '') and (delete_local or user_confirms(
+            message="Would you like to delete your " + dataset_name + " dataset?")):
+        dataset_path = os.getcwd() + '/dataset/' + dataset_name
+
+        cli_spinner("Deleting " + dataset_name + " dataset...", shutil.rmtree, dataset_path)
+
+tf_bbox()
+
+### HELPERS ###
 
 # # stdout redirection found at https://codingdose.info/2018/03/22/supress-print-output-in-python/
 # def _import_od():
