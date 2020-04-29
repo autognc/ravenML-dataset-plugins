@@ -3,7 +3,8 @@ import shutil
 import pandas as pd
 import json
 import cv2
-from ravenml.utils.question import cli_spinner
+from colorama import Fore
+from ravenml.utils.question import cli_spinner, user_selects, user_confirms, user_input
 from rmldatatfbbox.utils.io_utils import copy_data_locally, download_data_from_s3
 from rmldatatfbbox.utils.classes import METADATA_PREFIX, BoundingBox, BBoxLabeledImage
 
@@ -17,9 +18,7 @@ def default_filter_and_load(data_source, **kwargs):
     # ask the user if they would like to perform filtering
     # if yes, enter a loop that supplies filter options
     # if no, skip
-    """if user_confirms(
-            message="Would you like to filter out any of the data ({} images total)?".format(len(tags_df)),
-            default=False):
+    if kwargs['filter']:
         sets = {}
         # outer loop to determine how many sets the user will create
         try:
@@ -42,12 +41,12 @@ def default_filter_and_load(data_source, **kwargs):
                         print(Fore.MAGENTA + "ℹ Filters already applied:\n{}".
                             format("\n".join(filters_applied)))
 
-                    selected_tags = user_selection(
+                    selected_tags = user_selects(
                         message=
                         "Please select a set of tags with which to apply a filter:",
                         choices=list(tags_df),
                         selection_type="checkbox")
-                    filter_type = user_selection(
+                    filter_type = user_selects(
                         message=
                         "Which filter would you like to apply to the above set?",
                         choices=["AND (intersection)", "OR (union)"],
@@ -76,8 +75,8 @@ def default_filter_and_load(data_source, **kwargs):
                             "Would you like to continue filtering this set?",
                             default=False):
                         set_name = user_input(
-                            message="What would you like to name this set?",
-                            validator=FilenameValidator)
+                            message="What would you like to name this set?")
+                            # validator=FilenameValidator)
                         sets[set_name] = subset
                         filter_metadata["groups"].append({
                             "name":
@@ -99,7 +98,7 @@ def default_filter_and_load(data_source, **kwargs):
                     message=
                     'How many images of set "{}" would you like to use? (?/{})'
                     .format(set_name, len(set_data)),
-                    validator=IntegerValidator,
+                    # validator=IntegerValidator,
                     default=str(len(set_data)))
                 n = int(how_many)
                 sets_to_join.append(
@@ -116,8 +115,8 @@ def default_filter_and_load(data_source, **kwargs):
         except Exception as e:
             print(e)
             sys.exit(1)
-    else: """
-    image_ids = tags_df.index.tolist()
+    else: 
+        image_ids = tags_df.index.tolist()
 
     # condition function for S3 download and local copying
     def need_file(filename):
@@ -144,6 +143,92 @@ def default_filter_and_load(data_source, **kwargs):
         source_dir=data_dir, dest_dir=temp_dir, condition_func=need_file)
 
     return image_ids, filter_metadata, temp_dir
+
+def and_filter(tags_df, filter_tags):
+    """Filters out a set of images based upon the intersection of its tag values
+    
+    NOTE: With an AND (intersection) filter, an image must possess all tags in
+    the `filter_tags` list in order to pass the filter.
+
+    Args:
+        tags_df (DataFrame): a pandas DataFrame storing image IDs and
+            associated tags; its structure is:
+                index (rows) = image ID (str)
+                column headers = the tags themselves
+                columns = True/False values for whether the image has the tag
+                    in that column header
+        filter_tags (list): a list of str values for the tags that should be
+            used to apply the filter
+    
+    Returns:
+        DataFrame: a subset of the input DataFrame with those images that
+            passed the AND filter remaining
+    """
+    subset = tags_df
+    for tag in filter_tags:
+        subset = subset[subset[tag]]
+    return subset
+
+
+def or_filter(tags_df, filter_tags):
+    """Filters out a set of images based upon the union of its tag values
+    
+    NOTE: With an OR (union) filter, an image must possess at least one tag in
+    the `filter_tags` list in order to pass the filter.
+
+    Args:
+        tags_df (DataFrame): a pandas DataFrame storing image IDs and
+            associated tags; its structure is:
+                index (rows) = image ID (str)
+                column headers = the tags themselves
+                columns = True/False values for whether the image has the tag
+                    in that column header
+        filter_tags (list): a list of str values for the tags that should be
+            used to apply the filter
+    
+    Returns:
+        DataFrame: a subset of the input DataFrame with those images that
+            passed the OR filter remaining
+    """
+    result = pd.DataFrame()
+    for tag in filter_tags:
+        subset = tags_df[tags_df[tag]]
+        result = pd.concat((result, subset), sort=False)
+    result = result.reset_index().drop_duplicates(
+        subset='index', keep='first').set_index('index')
+    return result
+
+
+def join_sets(sets):
+    """Returns the union of a set of datasets
+    
+    NOTE: this function removes duplicates, so it is possible to end up with a
+    smaller number of items than are given as inputs.
+
+    Args:
+        sets (list): a list of datasets that should be merged into one (the
+            union of all datasets); each element of the list is a DataFrame
+            in the format:
+                index (rows) = image ID (str)
+                column headers = the tags themselves
+                columns = True/False values for whether the image has the tag
+                    in that column header
+    
+    Returns:
+        DataFrame: a DataFrame that represents the union of all of the input
+            DataFrames with duplicates removed; it stores image IDs and 
+            associated tags in the format:
+                index (rows) = image ID (str)
+                column headers = the tags themselves
+                columns = True/False values for whether the image has the tag
+                    in that column header
+    """
+    result = pd.DataFrame()
+    for group in sets:
+        result = pd.concat((result, group), sort=False)
+    result = result.reset_index().drop_duplicates(
+        subset='index', keep='first').set_index('index')
+    return result
 
 def ingest_metadata(data_source, kwargs):
     only_json_func = lambda filename: filename.startswith("meta_")

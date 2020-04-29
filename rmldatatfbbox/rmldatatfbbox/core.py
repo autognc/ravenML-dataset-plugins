@@ -47,6 +47,11 @@ delete_local_opt = click.option(
     help='Enter your first and last name. Ignored without --no-user.'
 )
 
+filter_opt = click.option(
+    '-f', '--filter', is_flag=True, is_eager=True,
+    help='Enable interactive image filtering option'
+)
+
 ### COMMANDS ###
 # @click.command(help='TensorFlow Object Detection with bounding boxes.')
 # @click.pass_context
@@ -62,9 +67,10 @@ def tf_bbox():#(ctx):
 @kfolds_opt
 @upload_opt
 @delete_local_opt
+@filter_opt
 # Will have additional params, ctx and something like create_dataset: CreateDatasetInput,
 def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int, upload: str,
-           delete_local: bool):
+           delete_local: bool, filter: bool):
 
     # Hardcoded Values that are assumed to be inputs
     data_origin="S3"
@@ -80,10 +86,10 @@ def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int
 
     if data_origin == "Local":
         image_ids, filter_metadata = default_filter_and_load(
-                data_source=data_origin, data_filepath=data_path)
+                data_source=data_origin, data_filepath=data_path, filter=filter)
     else:
         image_ids, filter_metadata, temp_dir = default_filter_and_load(
-            data_source=data_origin, bucket=bucket, filter_vals=user_folder_selection)
+            data_source=data_origin, bucket=bucket, filter_vals=user_folder_selection, filter=filter)
     
     # Transformation is Missing
     transform_metadata = []
