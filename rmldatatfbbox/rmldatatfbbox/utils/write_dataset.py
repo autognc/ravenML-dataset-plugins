@@ -1,5 +1,6 @@
 import os, shutil, time, json
 import contextlib2
+from pathlib import Path
 from object_detection.dataset_tools import tf_record_creation_util
 from random import shuffle
 from datetime import datetime
@@ -17,22 +18,22 @@ def write_dataset(obj_list,
         out_dir (Path): directory to write this dataset to
         custom_dataset_name (str): name of the dataset's containing folder
     """
-    out_dir = os.getcwd() # Used to be Path.cwd()
-    dataset_path = out_dir + '/dataset/' + custom_dataset_name
+    out_dir = Path.cwd()
+    dataset_path = out_dir / 'dataset' / custom_dataset_name
     print(dataset_path)
     delete_dir(dataset_path)
 
     test_subset, dev_subset = split_data(obj_list, test_percent)
 
     # Test subset.
-    write_related_data(test_subset, dataset_path + '/test')
+    write_related_data(test_subset, dataset_path / 'test')
 
-    dev_path = dataset_path + '/splits'
+    dev_path = dataset_path / 'splits'
 
     # standard_path = dev_path / 'standard'
     # write_out_fold(standard_path, fold, is_standard=True)
 
-    complete_path = dev_path + '/complete'
+    complete_path = dev_path / 'complete'
     write_out_complete_set(complete_path, dev_subset)
 
 
@@ -58,9 +59,9 @@ def write_metadata(
         transforms (dict): a dictionary representing transform metadata
         out_dir (Path, optional): Defaults to Path.cwd().
     """
-    out_dir = os.getcwd() # USed to be Path.cwd()
-    dataset_path = out_dir + '/dataset/' + name
-    metadata_filepath = dataset_path + '/metadata.json'
+    out_dir = Path.cwd()
+    dataset_path = out_dir / 'dataset' / name
+    metadata_filepath = dataset_path / 'metadata.json'
 
     metadata = {}
     metadata["name"] = name
@@ -139,14 +140,14 @@ def write_out_complete_set(path, data):
         path (Path): directory to write complete set out to
         data (list): objects to write to the complete set
     """
-    record_path = path + '/train'
+    record_path = path / 'train'
     if not os.path.exists(record_path):
         os.makedirs(record_path)
 
     test_record_data, train_record_data = split_data(data)
 
-    write_out_tf_examples(train_record_data, record_path + '/train.record')
-    write_out_tf_examples(test_record_data, record_path + '/test.record')
+    write_out_tf_examples(train_record_data, record_path / 'train.record')
+    write_out_tf_examples(test_record_data, record_path / 'test.record')
 
 def write_out_tf_examples(objects, path):
     """Writes out list of objects out as a single tf_example

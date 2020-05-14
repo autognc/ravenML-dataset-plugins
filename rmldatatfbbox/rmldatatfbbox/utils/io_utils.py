@@ -1,6 +1,7 @@
 import os
 import shutil
 import boto3
+from pathlib import Path
 
 def copy_data_locally(source_dir, dest_dir=None,
                       condition_func=lambda filename: True,
@@ -21,7 +22,7 @@ def copy_data_locally(source_dir, dest_dir=None,
     # if isinstance(source_dir, str):
     #     source_dir = Path(source_dir)
     if dest_dir is None:
-        cwd = os.getcwd() # Used to be Path.cwd()
+        cwd = Path.cwd()
         data_dir = cwd / 'data'
         os.makedirs(data_dir, exist_ok=True)
     else:
@@ -45,11 +46,10 @@ def copy_data_locally(source_dir, dest_dir=None,
     #     worker.start()
     #     workers.append(worker)
 
-    for file in os.listdir(source_dir):
-        file = source_dir + '/' + file
-        if os.path.isfile(file) and condition_func(file) and not os.path.exists(data_dir + '/' + file):
+    for file in source_dir.iterdir():
+        if os.path.isfile(file) and condition_func(file.name) and not (data_dir / file.name).exists():
             # copy_queue.put(file.absolute()) No multithreading
-            shutil.copy(file, data_dir)
+            shutil.copy(file.absolute(), data_dir.absolute())
 
     # copy_queue.join()
     # for _ in range(num_threads):
@@ -84,9 +84,8 @@ def download_data_from_s3(bucket_name,
     #         # TODO: test for files with prefixes here
     #         queue.task_done()
 
-    cwd = os.getcwd() # Used to be Path.cwd()
-    # data_dir = cwd / 'data'
-    data_dir = cwd + '/data'
+    cwd = Path.cwd()
+    data_dir = cwd / 'data'
     # try:
     os.makedirs(data_dir, exist_ok=True)
     # except FileExistsError:
@@ -110,7 +109,7 @@ def download_data_from_s3(bucket_name,
     for prefix in filter_vals:
         for obj in bucket.objects.filter(Prefix=prefix):
             filename = obj.key.split("/")[-1]
-            if condition_func(filename) and not os.path.exists(data_dir + "/" + filename):
+            if condition_func(filename) and not (data_dir / filename).exists():
                 # download_queue.put(obj) No multithreading
                 obj.Object().download_file(obj.key.split("/")[-1])
 

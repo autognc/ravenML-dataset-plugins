@@ -3,6 +3,7 @@ import shutil
 import pandas as pd
 import json
 import cv2
+from pathlib import Path
 from colorama import Fore
 from ravenml.utils.question import cli_spinner, user_selects, user_confirms, user_input
 from rmldatatfbbox.utils.io_utils import copy_data_locally, download_data_from_s3
@@ -133,9 +134,9 @@ def default_filter_and_load(data_source, **kwargs):
                     filter_vals=kwargs['filter_vals'], condition_func=need_file)
 
     # sequester data for this specific run    
-    cwd = os.getcwd() # Used to be Path.cwd
-    temp_dir = cwd + '/data/temp'
-    data_dir = cwd + '/data'
+    cwd = Path.cwd()
+    temp_dir = cwd / 'data' / 'temp'
+    data_dir = cwd / 'data'
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
     os.makedirs(temp_dir)
@@ -283,8 +284,8 @@ def construct_all(image_ids, **kwargs):
 def construct(image_id, **kwargs):
     temp_dir = kwargs['temp_dir']
     if temp_dir is None:
-        cwd = os.getcwd() # Used to be Path.cwd()
-        data_dir = cwd + '/data'
+        cwd = Path.cwd()
+        data_dir = cwd / 'data'
     else:
         data_dir = temp_dir
 
@@ -292,23 +293,24 @@ def construct(image_id, **kwargs):
     image_type = None
     file_extensions = [".png", ".jpg", ".jpeg"]
     for extension in file_extensions:
-        if os.path.exists(data_dir + '/' + f'image_{image_id}{extension}'):
-            image_filepath = data_dir + '/' + f'image_{image_id}{extension}'
+        if os.path.exists(data_dir / f'image_{image_id}{extension}'):
+            image_filepath = data_dir / f'image_{image_id}{extension}'
             image_type = extension
-            ydim, xdim = tuple(cv2.imread(image_filepath).shape[:2])
+            ydim, xdim = tuple(cv2.imread(str(image_filepath.absolute())).shape[:2])
             break
 
     if image_filepath is None:
         raise ValueError("Hmm, there doesn't seem to be a valid image filepath.")
 
-    with open(data_dir + '/' + f"meta_{image_id}.json", "r") as f:
+    with open(data_dir / f"meta_{image_id}.json", "r") as f:
         meta = json.load(f)
 
     label_boxes = []
     for label, b in meta['bboxes'].items():
+        # missing param for bboxLabeledImage class
         label_boxes.append(BoundingBox(label, b['xmin'], b['xmax'], b['ymin'], b['ymax']))
         add_label_int(label)
-
+    
     bbox = BBoxLabeledImage(image_id, image_filepath, image_type, label_boxes, xdim, ydim)
 
     return bbox
@@ -321,14 +323,15 @@ def add_label_int(label_to_add):
         # renumber all values
         BBoxLabeledImage.renumber_label_to_int_dict()
 
+# Bbox specific
 def write_label_map(dataset_name):
         """Writes out the TensorFlow Object Detection Label Map
         
         Args:
             dataset_name (str): the name of the dataset
         """
-        dataset_path = os.getcwd() + '/dataset/' + dataset_name
-        label_map_filepath = dataset_path + '/label_map.pbtxt'
+        dataset_path = Path.cwd() / 'dataset' / dataset_name
+        label_map_filepath = dataset_path / 'label_map.pbtxt'
         label_map = []
         for label_name, label_int in BBoxLabeledImage._label_to_int_dict.items():
             label_info = "\n".join([

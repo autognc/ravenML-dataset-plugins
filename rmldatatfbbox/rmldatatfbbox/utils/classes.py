@@ -1,5 +1,6 @@
 import os, shutil
 import tensorflow as tf
+from pathlib import Path
 from object_detection.utils import dataset_util
 
 ### CONSTANTS### Could be used for other plugins
@@ -27,15 +28,15 @@ class LabeledImage():
 
     def copy_associated_files(self, destination, **kwargs):
         if self.temp_dir is None:
-            data_dir = os.getcwd() + '/data' #Used to be Path.cwd() / "data"
+            data_dir = Path.cwd() / "data"
         else:
             data_dir = self.temp_dir
         for suffix in self.associated_files.values():
             for prefix in self.related_data_prefixes.values():
-                filepath = data_dir + '/' + f'{prefix}{self.image_id}{suffix}'
+                filepath = data_dir / f'{prefix}{self.image_id}{suffix}'
                 if os.path.exists(filepath):
                     shutil.copy(
-                        str(filepath), str(destination))
+                        str(filepath.absolute()), str(destination.absolute()))
 
 class BoundingBox:
     """Stores the label and bounding box dimensions for a detected image region
@@ -117,15 +118,15 @@ class BBoxLabeledImage(LabeledImage):
         Returns:
             tf_example (tf.train.Example): TensorFlow specified training object.
         """
-        path_to_image = self.image_path
+        path_to_image = Path(self.image_path)
 
-        with tf.gfile.GFile(str(path_to_image), 'rb') as fid:
+        with tf.io.gfile.GFile(str(path_to_image), 'rb') as fid:
             encoded_png = fid.read()
 
         image_width  = self.xdim
         image_height = self.ydim
 
-        filename = path_to_image.encode('utf8')
+        filename = path_to_image.name.encode('utf8')
         image_format = bytes(self.image_type, encoding='utf-8')
         xmins = []
         xmaxs = []

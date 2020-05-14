@@ -7,9 +7,10 @@ Core command group and commands for TF Bounding Box dataset plugin.
 import click 
 import os
 import shutil
+from pathlib import Path
 from ravenml.options import verbose_opt
 from ravenml.utils.question import user_input, cli_spinner, user_confirms
-from ravenml.utils.plugins import fill_basic_metadata
+# from ravenml.utils.plugins import fill_basic_dataset_creation_metadata
 from rmldatatfbbox.utils.helpers import (default_filter_and_load, construct_all,
                                          write_label_map)
 from rmldatatfbbox.utils.write_dataset import write_dataset, write_metadata
@@ -58,7 +59,8 @@ filter_opt = click.option(
 @click.group()
 def tf_bbox():#(ctx):
     pass
-    
+
+#temporary, needs to be changed to config input    
 @tf_bbox.command(help='Create a dataset.')
 @verbose_opt
 @name_opt
@@ -69,8 +71,14 @@ def tf_bbox():#(ctx):
 @delete_local_opt
 @filter_opt
 # Will have additional params, ctx and something like create_dataset: CreateDatasetInput,
-def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int, upload: str,
-           delete_local: bool, filter: bool):
+def create(verbose: bool, 
+            name:str, 
+            comments:str, 
+            dataset_name: str, 
+            kfolds: int, 
+            upload: str,
+            delete_local: bool, 
+            filter: bool):
 
     # Hardcoded Values that are assumed to be inputs
     data_origin="S3"
@@ -82,7 +90,7 @@ def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int
     # Probably needs to be a new function in ravenml for dataset creation metadata
     # Commented out dataset type
     metadata = {}
-    fill_basic_metadata(metadata, user_folder_selection, name, comments)
+    # fill_basic_dataset_creation_metadata(metadata, user_folder_selection, name, comments)
 
     if data_origin == "Local":
         image_ids, filter_metadata = default_filter_and_load(
@@ -118,11 +126,11 @@ def create(verbose: bool, name:str, comments:str, dataset_name: str, kfolds: int
         default = ""
         default = os.getenv('DATASETS_BUCKET_NAME', default)
         bucket = upload if upload else user_input(message="Which bucket would you like to upload to?", default=default)
-        cli_spinner("Uploading dataset to S3...", upload_dataset, bucket_name=bucket, directory=os.getcwd() + '/dataset/' + dataset_name)
+        cli_spinner("Uploading dataset to S3...", upload_dataset, bucket_name=bucket, directory=Path.cwd() / 'dataset' / dataset_name)
 
     if (dataset_name != '') and (delete_local or user_confirms(
             message="Would you like to delete your " + dataset_name + " dataset?")):
-        dataset_path = os.getcwd() + '/dataset/' + dataset_name
+        dataset_path = Path.cwd() / 'dataset' / dataset_name
 
         cli_spinner("Deleting " + dataset_name + " dataset...", shutil.rmtree, dataset_path)
 
