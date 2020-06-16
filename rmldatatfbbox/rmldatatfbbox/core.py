@@ -8,16 +8,17 @@ import click
 import os
 import shutil
 from pathlib import Path
+from rmldatatfbbox.utils.helpers import (construct_all, write_label_map)
 from ravenml.options import verbose_opt
 from ravenml.utils.question import user_input, cli_spinner, user_confirms
-# from ravenml.utils.plugins import fill_basic_dataset_creation_metadata
-from rmldatatfbbox.utils.helpers import (default_filter_and_load, construct_all,
-                                         write_label_map)
-from rmldatatfbbox.utils.write_dataset import write_dataset, write_metadata
-from rmldatatfbbox.utils.io_utils import upload_dataset
+from ravenml.utils.plugins import fill_basic_dataset_metadata
+from ravenml.data.helpers import default_filter_and_load
+from ravenml.data.write_dataset import write_dataset, write_metadata
+from ravenml.utils.io_utils import upload_dataset
+from rmldatatfbbox.utils.classes import METADATA_PREFIX
 
 ### OPTIONS ###
-### OPTIONS: could be used for other plugins###
+### OPTIONS: could be used for other plugins ###
 name_opt = click.option(
     '-n', '--name', type=str, 
     help='First and Last name of user.'
@@ -89,15 +90,15 @@ def create(verbose: bool,
     # create dataset creation metadata dict and populate with basic information
     # Probably needs to be a new function in ravenml for dataset creation metadata
     # Commented out dataset type
-    metadata = {}
-    # fill_basic_dataset_creation_metadata(metadata, user_folder_selection, name, comments)
+    # metadata = {}
+    # fill_basic_dataset_metadata(metadata, datasetCreateInput.data, name, comments)
 
     if data_origin == "Local":
         image_ids, filter_metadata = default_filter_and_load(
-                data_source=data_origin, data_filepath=data_path, filter=filter)
+                data_source=data_origin, data_filepath=data_path, filter=filter, metadata_prefix=METADATA_PREFIX)
     else:
         image_ids, filter_metadata, temp_dir = default_filter_and_load(
-            data_source=data_origin, bucket=bucket, filter_vals=user_folder_selection, filter=filter)
+            data_source=data_origin, bucket=bucket, filter_vals=user_folder_selection, filter=filter, metadata_prefix=METADATA_PREFIX)
     
     # Transformation is Missing
     transform_metadata = []
