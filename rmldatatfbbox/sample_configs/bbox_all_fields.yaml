@@ -7,7 +7,7 @@ overwrite_local: True
 dataset_path: '~/Desktop/test'
 # filter: True
 upload: False
-delete_local: False
+delete_local: True
 metadata:
     created_by: Abhi Dhir
     comments: test

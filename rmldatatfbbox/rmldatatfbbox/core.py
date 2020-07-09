@@ -5,18 +5,16 @@ Date Created:   04/22/2020
 Core command group and commands for TF Bounding Box dataset plugin.
 """
 import click 
-import os
 import sys
 import io
 import importlib
 import shutil
 from pathlib import Path
 import tensorflow as tf
-from rmldatatfbbox.utils.helpers import (construct_all, write_label_map)
-from ravenml.utils.question import user_input, cli_spinner, user_confirms
+from rmldatatfbbox.utils.helpers import (construct_all, write_label_map, export_as_TFExample)
+from ravenml.utils.question import user_input, cli_spinner
 from ravenml.data.helpers import default_filter_and_load
 from ravenml.data.write_dataset import write_dataset, write_metadata
-from ravenml.utils.io_utils import upload_dataset
 from ravenml.data.options import pass_create
 from ravenml.data.interfaces import CreateInput, CreateOutput
 
@@ -34,7 +32,9 @@ def create(ctx: click.Context, create: CreateInput):
     cli_spinner("Importing TensorFlow...", _import_od)
 
     config = create.config.get("plugin")
-    metadata = create.plugin_metadata
+
+    # Optional Information from interface (just contains plugin)
+    # metadata = create.plugin_metadata
 
     # set up TF verbosity
     if config.get('verbose'):
@@ -45,19 +45,19 @@ def create(ctx: click.Context, create: CreateInput):
     # set base directory for dataset 
     base_dir = create.dataset_path
     
-    # Transformation is Missing
+    # Transformation functionality is not currently supported, thus the empty array
     transform_metadata = []
 
+    # Variable type validation is currently not supported
     dataset_name = config.get("dataset_name") if config.get("dataset_name") else user_input(message="What would you like to name this dataset?")
-                                                # ,validator=FilenameValidator)
-    k_folds_specified = config.get("kfolds") if config.get("kfolds") else user_input(message="How many folds would you like the dataset to have?",
-                                                            #    validator=IntegerValidator,
-                                                               default="5")
     
-    imageset_data = create.config.get("metadata").get("imageset_data")
-    labeled_images, label_to_int_dict = construct_all(imageset_data.get("image_ids"), temp_dir=imageset_data.get("temp_dir"))
+    k_folds_specified = config.get("kfolds") if config.get("kfolds") else user_input(message="How many folds would you like the dataset to have?",default="5")
+
     test_percent = config.get("test_percent") if config.get("test_percent") else .2
     
+    imageset_data = create.config.get("metadata").get("imageset_data")
+    labeled_images, label_to_int_dict = construct_all(imageset_data.get("image_ids"), imageset_data.get("temp_dir"))
+        
     associated_files = {
         "image_type_1": ".png",
         "image_type_2": ".jpg",
@@ -79,7 +79,9 @@ def create(ctx: click.Context, create: CreateInput):
                                                                      out_dir=base_dir,
                                                                      associated_files=associated_files,
                                                                      related_data_prefixes=related_data_prefixes,
-                                                                     label_to_int_dict=label_to_int_dict)
+                                                                     label_to_int_dict=label_to_int_dict,
+                                                                     export_function=export_as_TFExample)
+
     cli_spinner("Writing out metadata locally...", write_metadata,name=dataset_name,
                                                                   user=create.config.get("metadata").get("created_by"),
                                                                   comments=create.config.get("metadata").get("comments"),
@@ -88,6 +90,7 @@ def create(ctx: click.Context, create: CreateInput):
                                                                   filters=imageset_data.get("filter_metadata"),
                                                                   transforms=transform_metadata,
                                                                   out_dir=base_dir)
+
     cli_spinner("Writing out additional files...", write_label_map,dataset_name, base_dir, label_to_int_dict)
     cli_spinner("Deleting temp directory...", shutil.rmtree, imageset_data.get("temp_dir"))
 
