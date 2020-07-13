@@ -11,15 +11,14 @@ import importlib
 import shutil
 from pathlib import Path
 import tensorflow as tf
-from rmldatatfbbox.utils.helpers import (construct_all, write_label_map, export_as_TFExample)
+from rmldatatfbbox.utils.helpers import BboxDatasetWriter
 from ravenml.utils.question import user_input, cli_spinner
 from ravenml.data.helpers import default_filter_and_load
-from ravenml.data.write_dataset import write_dataset, write_metadata
 from ravenml.data.options import pass_create
 from ravenml.data.interfaces import CreateInput, CreateOutput
 
 ### COMMANDS ###
-@click.group(help='Dataset creation with bounding box info')
+@click.group(help='TensorFlow Object Detection with bounding boxes.')
 @click.pass_context
 def tf_bbox(ctx):
     pass
@@ -31,33 +30,14 @@ def create(ctx: click.Context, create: CreateInput):
 
     cli_spinner("Importing TensorFlow...", _import_od)
 
-    config = create.config.get("plugin")
-
-    # Optional Information from interface (just contains plugin)
-    # metadata = create.plugin_metadata
+    config = create.config["plugin"]
 
     # set up TF verbosity
     if config.get('verbose'):
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     else:
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
-    
-    # set base directory for dataset 
-    base_dir = create.dataset_path
-    
-    # Transformation functionality is not currently supported, thus the empty array
-    transform_metadata = []
 
-    # Variable type validation is currently not supported
-    dataset_name = config.get("dataset_name") if config.get("dataset_name") else user_input(message="What would you like to name this dataset?")
-    
-    k_folds_specified = config.get("kfolds") if config.get("kfolds") else user_input(message="How many folds would you like the dataset to have?",default="5")
-
-    test_percent = config.get("test_percent") if config.get("test_percent") else .2
-    
-    imageset_data = create.config.get("metadata").get("imageset_data")
-    labeled_images, label_to_int_dict = construct_all(imageset_data.get("image_ids"), imageset_data.get("temp_dir"))
-        
     associated_files = {
         "image_type_1": ".png",
         "image_type_2": ".jpg",
@@ -72,31 +52,17 @@ def create(ctx: click.Context, create: CreateInput):
         'labels': 'bboxLabels_'
     }
 
-    cli_spinner("Writing out dataset locally...", write_dataset,list(labeled_images.values()),
-                                                                     custom_dataset_name=dataset_name,
-                                                                     num_folds=int(k_folds_specified),
-                                                                     test_percent=test_percent,
-                                                                     out_dir=base_dir,
-                                                                     associated_files=associated_files,
-                                                                     related_data_prefixes=related_data_prefixes,
-                                                                     label_to_int_dict=label_to_int_dict,
-                                                                     export_function=export_as_TFExample)
+    datasetWriter = BboxDatasetWriter(create, associated_files=associated_files, related_data_prefixes=related_data_prefixes)
+            
+    imageset_data = create.config["metadata"]["imageset_data"]
+    labeled_images = datasetWriter.construct_all(imageset_data["image_ids"], imageset_data["temp_dir"])
 
-    cli_spinner("Writing out metadata locally...", write_metadata,name=dataset_name,
-                                                                  user=create.config.get("metadata").get("created_by"),
-                                                                  comments=create.config.get("metadata").get("comments"),
-                                                                  training_type="Bounding_Box",
-                                                                  image_ids=imageset_data.get("image_ids"),
-                                                                  filters=imageset_data.get("filter_metadata"),
-                                                                  transforms=transform_metadata,
-                                                                  out_dir=base_dir)
+    datasetWriter.write_dataset(list(labeled_images.values()))
+    datasetWriter.write_additional_files()
 
-    cli_spinner("Writing out additional files...", write_label_map,dataset_name, base_dir, label_to_int_dict)
     cli_spinner("Deleting temp directory...", shutil.rmtree, imageset_data.get("temp_dir"))
 
-    dataset_path = base_dir / 'dataset' / dataset_name
-
-    return CreateOutput(dataset_path, dataset_name, create.config)
+    return CreateOutput(create)
 
 ### HELPERS ###
 
