@@ -3,7 +3,6 @@ import json
 import cv2
 from pathlib import Path
 import tensorflow as tf
-from object_detection.utils import dataset_util
 from ravenml.data.write_dataset import DatasetWriter
 from ravenml.data.interfaces import CreateInput
 from ravenml.utils.question import cli_spinner_wrapper
@@ -84,18 +83,18 @@ class BboxDatasetWriter(DatasetWriter):
                 classes.append(self.label_to_int_dict[bounding_box["label"]])
 
             tf_example = tf.train.Example(features=tf.train.Features(feature={
-                'image/height': dataset_util.int64_feature(image_height),
-                'image/width': dataset_util.int64_feature(image_width),
-                'image/filename': dataset_util.bytes_feature(filename),
-                'image/source_id': dataset_util.bytes_feature(filename),
-                'image/encoded': dataset_util.bytes_feature(encoded_png),
-                'image/format': dataset_util.bytes_feature(image_format),
-                'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-                'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-                'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-                'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-                'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
-                'image/object/class/label': dataset_util.int64_list_feature(classes),
+                'image/height': tf.train.Feature(int64_list=tf.train.Int64List(value=[image_height])),
+                'image/width': tf.train.Feature(int64_list=tf.train.Int64List(value=[image_width])),
+                'image/filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
+                'image/source_id': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
+                'image/encoded': tf.train.Feature(bytes_list=tf.train.BytesList(value=[encoded_png])),
+                'image/format': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_format])),
+                'image/object/bbox/xmin': tf.train.Feature(float_list=tf.train.FloatList(value=xmins)),
+                'image/object/bbox/xmax': tf.train.Feature(float_list=tf.train.FloatList(value=xmaxs)),
+                'image/object/bbox/ymin': tf.train.Feature(float_list=tf.train.FloatList(value=ymins)),
+                'image/object/bbox/ymax': tf.train.Feature(float_list=tf.train.FloatList(value=ymaxs)),
+                'image/object/class/text': tf.train.Feature(bytes_list=tf.train.BytesList(value=classes_text)),
+                'image/object/class/label': tf.train.Feature(int64_list=tf.train.Int64List(value=classes)),
             }))
 
             return tf_example
