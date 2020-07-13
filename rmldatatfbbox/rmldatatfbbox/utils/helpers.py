@@ -24,11 +24,7 @@ class BboxDatasetWriter(DatasetWriter):
         return labeled_images
 
     def construct(self, image_id: str, temp_dir: Path):
-        if temp_dir is None:
-            cwd = Path.cwd()
-            data_dir = cwd / 'data'
-        else:
-            data_dir = temp_dir
+        data_dir = temp_dir
 
         image_filepath = None
         image_type = None

@@ -10,7 +10,6 @@ import io
 import importlib
 import shutil
 from pathlib import Path
-import tensorflow as tf
 from rmldatatfbbox.utils.helpers import BboxDatasetWriter
 from ravenml.utils.question import user_input, cli_spinner
 from ravenml.data.helpers import default_filter_and_load
@@ -59,8 +58,6 @@ def create(ctx: click.Context, create: CreateInput):
 
     datasetWriter.write_dataset(list(labeled_images.values()))
     datasetWriter.write_additional_files()
-
-    cli_spinner("Deleting temp directory...", shutil.rmtree, imageset_data.get("temp_dir"))
 
     return CreateOutput(create)
 

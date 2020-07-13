@@ -115,11 +115,6 @@ venv.bak/
 # compiled protos
 *pb2.py
 
-#Json folder
-json/
-dataset/
-data/
-
 # downloaded zip file
 *.zip
 
