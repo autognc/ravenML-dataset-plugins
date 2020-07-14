@@ -12,7 +12,6 @@ import shutil
 from pathlib import Path
 from rmldatatfbbox.utils.helpers import BboxDatasetWriter
 from ravenml.utils.question import user_input, cli_spinner
-from ravenml.data.helpers import default_filter_and_load
 from ravenml.data.options import pass_create
 from ravenml.data.interfaces import CreateInput, CreateOutput
 
@@ -46,11 +45,13 @@ def tf_bbox(ctx, create: CreateInput):
     }
 
     datasetWriter = BboxDatasetWriter(create, associated_files=associated_files, related_data_prefixes=related_data_prefixes)
+
+    datasetWriter.filter_and_load(metadata_prefix='meta_')
             
-    imageset_data = create.config["metadata"]["imageset_data"]
-    labeled_images = datasetWriter.construct_all(imageset_data["image_ids"], imageset_data["temp_dir"])
+    labeled_images = datasetWriter.construct_all()
 
     datasetWriter.write_dataset(list(labeled_images.values()))
+    datasetWriter.write_metadata()
     datasetWriter.write_additional_files()
 
     return CreateOutput(create)

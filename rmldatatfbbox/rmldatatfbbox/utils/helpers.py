@@ -14,16 +14,16 @@ class BboxDatasetWriter(DatasetWriter):
         # Additional initializations of plugin specific variables can go here
         super().__init__(create, **kwargs)
 
-    def construct_all(self, image_ids: list, temp_dir: Path):
+    def construct_all(self):
         labeled_images = {}
-
-        for image_id in image_ids:
-            labeled_images[image_id] = self.construct(image_id, temp_dir)
+        
+        for image_id in self.image_ids:
+            labeled_images[image_id] = self.construct(image_id)
         
         return labeled_images
 
-    def construct(self, image_id: str, temp_dir: Path):
-        data_dir = temp_dir
+    def construct(self, image_id: str):
+        data_dir = self.temp_dir
 
         image_filepath = None
         image_type = None
