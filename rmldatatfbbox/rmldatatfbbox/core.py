@@ -17,16 +17,10 @@ from ravenml.data.options import pass_create
 from ravenml.data.interfaces import CreateInput, CreateOutput
 
 ### COMMANDS ###
-@click.group(help='TensorFlow Object Detection with bounding boxes.')
-@click.pass_context
-def tf_bbox(ctx):
-    pass
-
-@tf_bbox.command(help='Create a dataset.')
+@click.command(help='Create a dataset for TensorFlow Object Detection with bounding boxes.')
 @pass_create
 @click.pass_context
-def create(ctx: click.Context, create: CreateInput):
-
+def tf_bbox(ctx, create: CreateInput):
     cli_spinner("Importing TensorFlow...", _import_od)
 
     config = create.config["plugin"]
