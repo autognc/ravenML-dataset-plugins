@@ -51,7 +51,7 @@ class BboxDatasetWriter(DatasetWriter):
 
         return bboxes
 
-    def export_as_TFExample(self, object):
+    def export_data(self, object):
             """Converts LabeledImageMask object to tf_example
             
             Returns:
