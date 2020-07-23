@@ -5,7 +5,7 @@ dataset_name: bbox_test_dataset
 imageset:
   - jigsaw_tester
 overwrite_local: True
-dataset_path: '~/Desktop/test'
+# dataset_path: '~/Desktop/test' #Default: ~/.ravenML/data_tf-bbox/datasets
 # filter: True
 # kfolds: 5
 # test_percent: .2

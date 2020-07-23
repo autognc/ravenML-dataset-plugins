@@ -17,7 +17,7 @@ class BboxDatasetWriter(DatasetWriter):
     def construct_all(self):
         labeled_images = {}
         
-        for image_id in self.image_ids:
+        for image_id in [path[1] for path in self.image_ids]:
             labeled_images[image_id] = self.construct(image_id)
         
         return labeled_images

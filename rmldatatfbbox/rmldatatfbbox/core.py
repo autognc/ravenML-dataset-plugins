@@ -22,7 +22,7 @@ from ravenml.data.interfaces import CreateInput, CreateOutput
 def tf_bbox(ctx, create: CreateInput):
     config = create.config["plugin"]
 
-    # set up TF verbosity
+    set up TF verbosity
     if config.get('verbose'):
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     else:
@@ -44,7 +44,8 @@ def tf_bbox(ctx, create: CreateInput):
 
     datasetWriter = BboxDatasetWriter(create, associated_files=associated_files, related_data_prefixes=related_data_prefixes)
 
-    datasetWriter.filter_and_load(metadata_prefix='meta_')
+    datasetWriter.filter_sets('meta_')
+    datasetWriter.load_data(metadata_prefix='meta_')
             
     labeled_images = datasetWriter.construct_all()
 
