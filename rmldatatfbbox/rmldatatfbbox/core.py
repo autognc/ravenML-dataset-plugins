@@ -9,6 +9,7 @@ import sys
 import io
 import importlib
 import shutil
+import tensorflow as tf
 from pathlib import Path
 from rmldatatfbbox.utils.helpers import BboxDatasetWriter
 from ravenml.utils.question import user_input, cli_spinner
@@ -22,7 +23,7 @@ from ravenml.data.interfaces import CreateInput, CreateOutput
 def tf_bbox(ctx, create: CreateInput):
     config = create.config["plugin"]
 
-    set up TF verbosity
+    # set up TF verbosity
     if config.get('verbose'):
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     else:
@@ -39,13 +40,16 @@ def tf_bbox(ctx, create: CreateInput):
 
     related_data_prefixes = {
         'images': 'image_',
-        'labels': 'bboxLabels_'
+        'labels': 'bboxLabels_',
+        'metadata': 'meta_'
     }
+
+    metadata_prefix = 'meta_'
 
     datasetWriter = BboxDatasetWriter(create, associated_files=associated_files, related_data_prefixes=related_data_prefixes)
 
-    datasetWriter.filter_sets('meta_')
-    datasetWriter.load_data(metadata_prefix='meta_')
+    datasetWriter.filter_sets(metadata_prefix)
+    datasetWriter.load_data(metadata_prefix=metadata_prefix)
             
     labeled_images = datasetWriter.construct_all()
 
