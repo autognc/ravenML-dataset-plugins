@@ -21,6 +21,12 @@ from ravenml.data.interfaces import CreateInput, CreateOutput
 @pass_create
 @click.pass_context
 def tf_bbox(ctx, create: CreateInput):
+    """Main driver of file, creates tf_bbox dataset
+
+    Args:
+        ctx (Context): click context object
+        create (CreateInput): input for dataset creation
+    """
     config = create.config["plugin"]
 
     # set up TF verbosity
@@ -30,26 +36,21 @@ def tf_bbox(ctx, create: CreateInput):
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
 
     associated_files = {
-        "image_type_1": ".png",
-        "image_type_2": ".jpg",
-        "image_type_3": ".jpeg",
-        "metadata": ".json",
-        "labels": ".csv",
-        "PASCAL_VOC_labels": ".xml"
+        'metadata': ('meta_', '.json'),
+        'other': [ ('image_', '.png'),
+                   ('image_', '.jpg'),
+                   ('image_', '.jpeg'),
+                   ('bboxLabels_', '.csv')]  
     }
+    
+    datasetWriter = BboxDatasetWriter(create, associated_files=associated_files)
 
-    related_data_prefixes = {
-        'images': 'image_',
-        'labels': 'bboxLabels_',
-        'metadata': 'meta_'
-    }
+    datasetWriter.load_image_ids()
 
-    metadata_prefix = 'meta_'
+    if config.get('filter'):
+        datasetWriter.interactive_filter()
 
-    datasetWriter = BboxDatasetWriter(create, associated_files=associated_files, related_data_prefixes=related_data_prefixes)
-
-    datasetWriter.filter_sets(metadata_prefix)
-    datasetWriter.load_data(metadata_prefix=metadata_prefix)
+    datasetWriter.load_data()
             
     labeled_images = datasetWriter.construct_all()
 
