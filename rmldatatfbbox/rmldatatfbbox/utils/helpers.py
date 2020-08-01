@@ -6,8 +6,6 @@ from pathlib import Path
 import tensorflow as tf
 from ravenml.data.write_dataset import DefaultDatasetWriter
 from ravenml.data.interfaces import CreateInput
-from ravenml.utils.question import cli_spinner_wrapper
-
 
 class BboxDatasetWriter(DefaultDatasetWriter):
     """Inherits from DefaultDatasetWriter, handles
@@ -164,7 +162,6 @@ class BboxDatasetWriter(DefaultDatasetWriter):
 
         return tf_example
 
-    @cli_spinner_wrapper("Writing additional files...")
     def write_additional_files(self):
         """Writes out the TensorFlow Object Detection Label Map
         
