@@ -28,8 +28,8 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         self.label_to_int_dict = {}
 
     def construct_all(self):
-        """Constructs objects for all data passed to it, sets obj_list
-            to list of constructed objects
+        """Constructs objects for all data passed to it, sets obj_dict
+            to dict of constructed objects
 
         Variables needed:
             image_ids (list): list of image_ids (tuples) to create objects for
@@ -39,7 +39,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         for image_id in self.image_ids:
             labeled_images[image_id] = self.construct(image_id)
         
-        self.obj_list = list(labeled_images.values())
+        self.obj_dict = labeled_images
 
     def construct(self, image_id: tuple):
         """Helper function for construct_all, creates individual object
@@ -82,7 +82,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
 
         return bboxes
     
-    def write_data(self, objects, path, split_type='train'):
+    def write_out_train_split(self, objects, path, split_type='train'):
         """Writes out list of objects out as a single tf_example
         
         Args:
