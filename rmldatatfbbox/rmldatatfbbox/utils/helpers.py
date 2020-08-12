@@ -28,41 +28,40 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         self.label_to_int_dict = {}
 
     def construct_all(self):
-        """Constructs objects for all data passed to it
+        """Constructs objects for all data passed to it, sets obj_list
+            to list of constructed objects
 
         Variables needed:
-            image_ids (list): list of image_ids to create objects for
-        Returns:
-            lableled_images (list): list of data objects
+            image_ids (list): list of image_ids (tuples) to create objects for
         """
         labeled_images = {}
         
-        for image_id in [id[1] for id in self.image_ids]:
+        for image_id in self.image_ids:
             labeled_images[image_id] = self.construct(image_id)
         
-        return labeled_images
+        self.obj_list = list(labeled_images.values())
 
-    def construct(self, image_id: str):
+    def construct(self, image_id: tuple):
         """Helper function for construct_all, creates individual object
             for passed image_id
 
         Args:
-            image_id (str): image_id to create object for
+            image_id (tuple): image_id to create object for, tuple of path and
+                image_id
         Variables needed:
-            temp_dir (Path): where all relevant data is
             label_to_int_dict (dict): dict with labels and corresponding
                 unique ints
         Returns:
             bboxes (object): object corresponding to the given image_id
         """
-        data_dir = self.temp_dir
+        data_dir = image_id[0]
 
         image_filepath = None
         image_type = None
         file_extensions = [".png", ".jpg", ".jpeg"]
         for extension in file_extensions:
-            if os.path.exists(data_dir / f'image_{image_id}{extension}'):
-                image_filepath = data_dir / f'image_{image_id}{extension}'
+            if os.path.exists(data_dir / f'image_{image_id[1]}{extension}'):
+                image_filepath = data_dir / f'image_{image_id[1]}{extension}'
                 image_type = extension
                 ydim, xdim = tuple(cv2.imread(str(image_filepath.absolute())).shape[:2])
                 break
@@ -70,7 +69,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         if image_filepath is None:
             raise ValueError("Hmm, there doesn't seem to be a valid image filepath.")
 
-        with open(data_dir / f"meta_{image_id}.json", "r") as f:
+        with open(data_dir / f"meta_{image_id[1]}.json", "r") as f:
             meta = json.load(f)
 
         label_boxes = []
@@ -79,7 +78,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             if label not in self.label_to_int_dict.keys():
                 self.label_to_int_dict[label] = len(self.label_to_int_dict) + 1
         
-        bboxes = {"image_id": image_id, "image_filepath": image_filepath, "image_type": image_type, "label_boxes": label_boxes, "xdim": xdim, "ydim": ydim}
+        bboxes = {"image_id": image_id[1], "image_filepath": image_filepath, "image_type": image_type, "label_boxes": label_boxes, "xdim": xdim, "ydim": ydim}
 
         return bboxes
     

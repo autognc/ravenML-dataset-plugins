@@ -35,26 +35,26 @@ def tf_bbox(ctx, create: CreateInput):
     else:
         tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.FATAL)
 
-    associated_files = {
-        'metadata': ('meta_', '.json'),
-        'other': [ ('image_', '.png'),
-                   ('image_', '.jpg'),
-                   ('image_', '.jpeg'),
-                   ('bboxLabels_', '.csv')]  
-    }
-    
-    datasetWriter = BboxDatasetWriter(create, associated_files=associated_files)
+    associated_files = [ 
+        ('meta_', '.json'),
+        ('image_', '.png'),
+        ('image_', '.jpg'),
+        ('image_', '.jpeg'),
+        ('bboxLabels_', '.csv')
+    ]
 
-    datasetWriter.load_image_ids()
+    metadata_format = ('meta_', '.json')
+    
+    datasetWriter = BboxDatasetWriter(create)
+
+    datasetWriter.load_image_ids(metadata_format)
 
     if config.get('filter'):
         datasetWriter.interactive_filter()
-
-    datasetWriter.load_data()
             
-    labeled_images = datasetWriter.construct_all()
+    datasetWriter.construct_all()
 
-    datasetWriter.write_dataset(list(labeled_images.values()))
+    datasetWriter.write_dataset(associated_files)
     datasetWriter.write_metadata()
     datasetWriter.write_additional_files()
 
