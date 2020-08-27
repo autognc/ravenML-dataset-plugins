@@ -49,8 +49,11 @@ def tf_bbox(ctx, create: CreateInput):
 
     datasetWriter.load_image_ids(metadata_format)
 
-    if config.get('filter'):
-        datasetWriter.interactive_filter()
+    # Filtering
+    if config.get('setSizeFilter'):
+        datasetWriter.set_size_filter(config['setSizeFilter'])
+    if config.get('tagFilter'):
+        datasetWriter.interactive_tag_filter()
             
     datasetWriter.construct_all()
 
