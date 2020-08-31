@@ -5,23 +5,17 @@ Date Created:   04/22/2020
 Core command group and commands for TF Bounding Box dataset plugin.
 """
 import click 
-import sys
-import io
-import importlib
-import shutil
 import tensorflow as tf
-from pathlib import Path
-from rmldatatfbbox.utils.helpers import BboxDatasetWriter
-from ravenml.utils.question import user_input, cli_spinner
+from rmldatatfrecord.utils.helpers import TfRecordDatasetWriter
 from ravenml.data.options import pass_create
 from ravenml.data.interfaces import CreateInput, CreateOutput
 
 ### COMMANDS ###
-@click.command(help='Create a dataset for TensorFlow Object Detection with bounding boxes.')
+@click.command(help='Create a dataset in TFRecord format.')
 @pass_create
 @click.pass_context
-def tf_bbox(ctx, create: CreateInput):
-    """Main driver of file, creates tf_bbox dataset
+def tf_record(ctx, create: CreateInput):
+    """Main driver of file, creates tf_record dataset
 
     Args:
         ctx (Context): click context object
@@ -45,7 +39,7 @@ def tf_bbox(ctx, create: CreateInput):
 
     metadata_format = ('meta_', '.json')
     
-    datasetWriter = BboxDatasetWriter(create)
+    datasetWriter = TfRecordDatasetWriter(create)
 
     datasetWriter.load_image_ids(metadata_format)
 
