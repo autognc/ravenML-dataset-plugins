@@ -1,13 +1,15 @@
 import os
 import json
 import cv2
+import numpy as np
 import contextlib2
 from pathlib import Path
 import tensorflow as tf
 from ravenml.data.write_dataset import DefaultDatasetWriter
 from ravenml.data.interfaces import CreateInput
 
-class BboxDatasetWriter(DefaultDatasetWriter):
+
+class TfRecordDatasetWriter(DefaultDatasetWriter):
     """Inherits from DefaultDatasetWriter, handles
         dataset creation
 
@@ -16,7 +18,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         export_data (object): helper method for write_data
     """
 
-    def __init__(self, create: CreateInput, **kwargs):
+    def __init__(self, create: CreateInput):
         """Initialization inherited from DatasetWriter,
             passes associated_files
 
@@ -24,8 +26,17 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             label_to_int_dict (dict): dict with labels and corresponding
                 unique ints
         """
-        super().__init__(create, **kwargs)
+        super().__init__(create)
         self.label_to_int_dict = {}
+        self.keypoints = None
+        for imageset_path in self.imageset_paths:
+            with open(os.path.join(imageset_path, 'metadata.json'), 'r') as f:
+                keypoints = np.array(json.load(f)['keypoints'])
+            if self.keypoints is None:
+                self.keypoints = keypoints
+            else:
+                if not np.array_equal(self.keypoints, keypoints):
+                    raise ValueError('Imagesets have non-matching 3D keypoints')
 
     def construct_all(self):
         """Constructs objects for all data passed to it, sets obj_dict
@@ -35,7 +46,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             image_ids (list): list of image_ids (tuples) to create objects for
         """
         labeled_images = {}
-        
+
         for image_id in self.image_ids:
             labeled_images[image_id] = self.construct(image_id)
         
@@ -77,11 +88,18 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             label_boxes.append({"label": label, "xmin": b['xmin'], "xmax": b['xmax'], "ymin": b['ymin'], "ymax": b['ymax']})
             if label not in self.label_to_int_dict.keys():
                 self.label_to_int_dict[label] = len(self.label_to_int_dict) + 1
-        
-        bboxes = {"image_id": image_id[1], "image_filepath": image_filepath, "image_type": image_type, "label_boxes": label_boxes, "xdim": xdim, "ydim": ydim}
 
-        return bboxes
-    
+        return {
+            "image_id": image_id[1],
+            "image_filepath": image_filepath,
+            "image_type": image_type,
+            "label_boxes": label_boxes,
+            "xdim": xdim,
+            "ydim": ydim,
+            "keypoints": meta['keypoints'],
+            "pose": meta['pose'],
+        }
+
     def write_out_train_split(self, objects, path, split_type='train'):
         """Writes out list of objects out as a single tf_example
         
@@ -135,6 +153,7 @@ class BboxDatasetWriter(DefaultDatasetWriter):
         ymaxs = []
         classes_text = []
         classes = []
+        keypoints = np.array(object['keypoints']).flatten()
 
         for bounding_box in object["label_boxes"]:
             xmins.append(bounding_box["xmin"] / image_width)
@@ -157,6 +176,8 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             'image/object/bbox/ymax': tf.train.Feature(float_list=tf.train.FloatList(value=ymaxs)),
             'image/object/class/text': tf.train.Feature(bytes_list=tf.train.BytesList(value=classes_text)),
             'image/object/class/label': tf.train.Feature(int64_list=tf.train.Int64List(value=classes)),
+            'image/object/keypoints': tf.train.Feature(float_list=tf.train.FloatList(value=keypoints)),
+            'image/object/pose': tf.train.Feature(float_list=tf.train.FloatList(value=object['pose'])),
         }))
 
         return tf_example
@@ -181,3 +202,4 @@ class BboxDatasetWriter(DefaultDatasetWriter):
             label_map.append(label_info)
         with open(label_map_filepath, 'w') as outfile:
             outfile.write("\n\n".join(label_map))
+        np.save(str(dataset_path / 'keypoints.npy'), self.keypoints)
