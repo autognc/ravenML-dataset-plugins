@@ -16,6 +16,7 @@ setup(
         'opencv-python',
         'numpy',
         'tensorflow',
+        'tqdm',
     ],
     entry_points='''
         [ravenml.plugins.data]
