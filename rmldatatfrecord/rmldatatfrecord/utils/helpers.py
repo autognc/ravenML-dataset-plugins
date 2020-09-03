@@ -2,9 +2,10 @@ import os
 import json
 import cv2
 import numpy as np
-import contextlib2
+import contextlib
 from pathlib import Path
 import tensorflow as tf
+import tqdm
 from ravenml.data.write_dataset import DefaultDatasetWriter
 from ravenml.data.interfaces import CreateInput
 
@@ -35,7 +36,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             if self.keypoints is None:
                 self.keypoints = keypoints
             else:
-                if not np.array_equal(self.keypoints, keypoints):
+                if not np.all(np.abs(self.keypoints - keypoints) < 1e-5):
                     raise ValueError('Imagesets have non-matching 3D keypoints')
 
     def construct_all(self):
@@ -47,7 +48,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
         """
         labeled_images = {}
 
-        for image_id in self.image_ids:
+        for image_id in tqdm.tqdm(self.image_ids, "Constructing data objects"):
             labeled_images[image_id] = self.construct(image_id)
         
         self.obj_dict = labeled_images
@@ -74,7 +75,6 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             if os.path.exists(data_dir / f'image_{image_id[1]}{extension}'):
                 image_filepath = data_dir / f'image_{image_id[1]}{extension}'
                 image_type = extension
-                ydim, xdim = tuple(cv2.imread(str(image_filepath.absolute())).shape[:2])
                 break
 
         if image_filepath is None:
@@ -94,8 +94,6 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             "image_filepath": image_filepath,
             "image_type": image_type,
             "label_boxes": label_boxes,
-            "xdim": xdim,
-            "ydim": ydim,
             "keypoints": meta['keypoints'],
             "pose": meta['pose'],
         }
@@ -119,7 +117,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             for idx in range(num_shards)
         ]
 
-        with contextlib2.ExitStack() as tf_record_close_stack:
+        with contextlib.ExitStack() as tf_record_close_stack:
             output_tfrecords = [
                 tf_record_close_stack.enter_context(tf.io.TFRecordWriter(file_name))
                 for file_name in tf_record_output_filenames
@@ -140,10 +138,8 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
         path_to_image = Path(object["image_filepath"])
 
         with tf.io.gfile.GFile(str(path_to_image), 'rb') as fid:
-            encoded_png = fid.read()
-
-        image_width  = object["xdim"]
-        image_height = object["ydim"]
+            encoded_image = fid.read()
+        image_height, image_width = tf.io.decode_image(encoded_image).shape[:2]
 
         filename = path_to_image.name.encode('utf8')
         image_format = bytes(object["image_type"], encoding='utf-8')
@@ -168,7 +164,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             'image/width': tf.train.Feature(int64_list=tf.train.Int64List(value=[image_width])),
             'image/filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
             'image/source_id': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
-            'image/encoded': tf.train.Feature(bytes_list=tf.train.BytesList(value=[encoded_png])),
+            'image/encoded': tf.train.Feature(bytes_list=tf.train.BytesList(value=[encoded_image])),
             'image/format': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_format])),
             'image/object/bbox/xmin': tf.train.Feature(float_list=tf.train.FloatList(value=xmins)),
             'image/object/bbox/xmax': tf.train.Feature(float_list=tf.train.FloatList(value=xmaxs)),
