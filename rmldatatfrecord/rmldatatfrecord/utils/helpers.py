@@ -96,6 +96,8 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             "label_boxes": label_boxes,
             "keypoints": meta['keypoints'],
             "pose": meta['pose'],
+            "translation": meta['translation'],
+            "imageset": os.path.basename(data_dir),
         }
 
     def write_out_train_split(self, objects, path, split_type='train'):
@@ -136,6 +138,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             tf_example (tf.train.Example): TensorFlow specified training object.
         """
         path_to_image = Path(object["image_filepath"])
+        imageset = object['imageset'].encode('utf-8')
 
         with tf.io.gfile.GFile(str(path_to_image), 'rb') as fid:
             encoded_image = fid.read()
@@ -160,6 +163,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             classes.append(self.label_to_int_dict[bounding_box["label"]])
 
         tf_example = tf.train.Example(features=tf.train.Features(feature={
+            'image/imageset': tf.train.Feature(bytes_list=tf.train.BytesList(value=[imageset])),
             'image/height': tf.train.Feature(int64_list=tf.train.Int64List(value=[image_height])),
             'image/width': tf.train.Feature(int64_list=tf.train.Int64List(value=[image_width])),
             'image/filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[filename])),
@@ -174,6 +178,7 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
             'image/object/class/label': tf.train.Feature(int64_list=tf.train.Int64List(value=classes)),
             'image/object/keypoints': tf.train.Feature(float_list=tf.train.FloatList(value=keypoints)),
             'image/object/pose': tf.train.Feature(float_list=tf.train.FloatList(value=object['pose'])),
+            'image/object/translation': tf.train.Feature(float_list=tf.train.FloatList(value=object['translation'])),
         }))
 
         return tf_example
