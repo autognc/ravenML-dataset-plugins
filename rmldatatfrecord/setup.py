@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
-from os import path, remove
+from os import remove
 from json import dump
 from shutil import copyfile
+from pathlib import Path
 from ravenml.utils.git import is_repo, git_sha, git_patch_tracked, git_patch_untracked
 
 # figured out to use find_packages() via:
@@ -11,7 +12,7 @@ from ravenml.utils.git import is_repo, git_sha, git_patch_tracked, git_patch_unt
 # gpu = os.getenv('RML_BBOX_GPU')
 # tensorflow_pkg = 'tensorflow==1.14.0' if not gpu else 'tensorflow-gpu==1.14.0'
 
-plugin_dir = path.abspath(path.dirname(__file__))
+plugin_dir = Path(__file__).resolve().parent
 
 # attempt to write git data to file
 # this will work in 3/4 install cases:
@@ -27,7 +28,7 @@ if repo:
         'plugin_tracked_git_patch': git_patch_tracked(plugin_dir),
         'plugin_untracked_git_patch': git_patch_untracked(plugin_dir)
     }
-    with open(path.join(plugin_dir, 'rmldatatfrecord', 'git_info.json'), 'w') as f:
+    with open(plugin_dir / 'rmldatatfrecord' / 'git_info.json', 'w') as f:
         dump(info, f, indent=2)
 
 setup(
@@ -55,4 +56,4 @@ setup(
 # the file from corrupting the git repo, and when creating a dist for PyPI 
 # for the same reason.
 if repo:
-    remove(path.join(plugin_dir, 'rmldatatfrecord', 'git_info.json'))
+    remove(plugin_dir / 'rmldatatfrecord' / 'git_info.json')
