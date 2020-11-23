@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 from os import remove
 from json import dump
-from shutil import copyfile
 from pathlib import Path
 from ravenml.utils.git import is_repo, git_sha, git_patch_tracked, git_patch_untracked
 
