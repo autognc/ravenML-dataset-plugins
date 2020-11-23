@@ -38,7 +38,7 @@ setup(
     install_requires=[
         'opencv-python',
         'numpy<1.19',
-        'tensorflow>=2.3',
+        'tensorflow~=2.3.0',
         'tqdm',
     ],
     entry_points=f'''
