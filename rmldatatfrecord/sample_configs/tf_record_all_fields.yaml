@@ -1,4 +1,4 @@
-# This sample config contains all fields supported by ravenML core and the bbox plugin.
+# This sample config contains all fields supported by ravenML core and the TFRecord plugin.
 # Plugin specific configuration is located in the plugin field.
 
 dataset_name: bbox_test_dataset
