@@ -1,9 +1,10 @@
-# This sample config contains all fields supported by ravenML core and the bbox plugin.
+# This sample config contains all fields supported by ravenML core and the TFRecord plugin.
 # Plugin specific configuration is located in the plugin field.
 
 dataset_name: bbox_test_dataset
 # local: False
 imageset: # If local, then full paths to each local imageset
+  # - cygnus_1k_random
   - jigsaw_tester
 overwrite_local: True
 # dataset_path: '~/Desktop/test' # Default: ~/.ravenML/data_tf-bbox/datasets
@@ -16,4 +17,7 @@ metadata:
     comments: test
 plugin:
     verbose: True
-    # filter: False
+    # tagFilter: False
+    # setSizeFilter:
+      # cygnus_1k_random: 100
+      # jigsaw_tester: 4
