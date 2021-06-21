@@ -3,11 +3,12 @@
 
 dataset_name: bbox_test_dataset
 # local: False
+# download_full_imagesets: True
 imageset: # If local, then full paths to each local imageset
   # - cygnus_1k_random
-  - jigsaw_tester
+  - tfrecord_tester
 overwrite_local: True
-# dataset_path: '~/Desktop/test' # Default: ~/.ravenML/data_tf-bbox/datasets
+# dataset_path: '~/Desktop/test' # Default: ~/.ravenML/data_tf-record/datasets
 # kfolds: 5
 # test_percent: .2
 upload: False
@@ -18,6 +19,6 @@ metadata:
 plugin:
     verbose: True
     # tagFilter: False
-    # setSizeFilter:
-      # cygnus_1k_random: 100
-      # jigsaw_tester: 4
+    setSizeFilter:
+      tfrecord_tester: 3
+      # cygnus_1k_random: 10

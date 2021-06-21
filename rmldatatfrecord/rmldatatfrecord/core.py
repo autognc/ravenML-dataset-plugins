@@ -45,7 +45,10 @@ def tf_record(ctx, create: CreateInput):
 
     # Filtering
     if config.get('setSizeFilter'):
-        datasetWriter.set_size_filter(config['setSizeFilter'])
+        datasetWriter.set_size_filter(config['setSizeFilter'], associated_files)
+    elif not create.config.get('download_full_imagesets'):
+        raise Exception("Set Size Filter must be used with partial download")
+
     if config.get('tagFilter'):
         datasetWriter.interactive_tag_filter()
             

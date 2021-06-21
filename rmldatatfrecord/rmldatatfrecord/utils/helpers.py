@@ -8,6 +8,7 @@ import tensorflow as tf
 import tqdm
 from ravenml.data.write_dataset import DefaultDatasetWriter
 from ravenml.data.interfaces import CreateInput
+from ravenml.utils.aws import download_imageset_file
 
 
 class TfRecordDatasetWriter(DefaultDatasetWriter):
@@ -28,6 +29,11 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
                 unique ints
         """
         super().__init__(create)
+
+        # Download needed files for plugin
+        for imageset_path in self.imageset_paths:
+            download_imageset_file(os.path.basename(imageset_path) + '/metadata.json', imageset_path)
+
         self.label_to_int_dict = {}
         self.keypoints = None
         for imageset_path in self.imageset_paths:
