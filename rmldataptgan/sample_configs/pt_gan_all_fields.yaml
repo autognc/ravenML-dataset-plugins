@@ -1,0 +1,38 @@
+# This sample config contains all fields supported by ravenML core and the TFRecord plugin.
+# Plugin specific configuration is located in the plugin field.
+
+dataset_name: pt_gan_1
+# local: False
+imageset: # If local, then full paths to each local imageset
+  - real_images_earth_1k
+  - real_images_iss_dock_500
+  - real_images_shuttle_600
+  - cygnus-real
+  - nasa_images_filtered
+  - cyg_nm_norm_4k
+  - cyg_nm_re_4k
+  - iss_norm_4k
+  - cygnus_real_iss_750
+overwrite_local: True
+# dataset_path: '~/Desktop/test' # Default: ~/.ravenML/data_tf-bbox/datasets
+# kfolds: 5
+test_percent: .2
+upload: True
+delete_local: False
+metadata:
+    created_by: Jacob Deutsch
+    comments: test
+plugin:
+    verbose: True
+    imagesets_B:
+      - real_images_shuttle_600
+      - real_images_iss_dock_500
+      - cygnus_real_iss_750
+      - real_images_earth_1k
+      - cygnus-real
+      - nasa_images_filtered
+    imagesets_A: 
+      - cyg_nm_norm_4k
+      - cyg_nm_re_4k
+      - iss_norm_4k
+    
