@@ -72,8 +72,8 @@ class TfRecordDatasetWriter(DefaultDatasetWriter):
         image_type = None
         file_extensions = [".png", ".jpg", ".jpeg"]
         for extension in file_extensions:
-            if os.path.exists(data_dir / f'image_{image_id[1]}{extension}'):
-                image_filepath = data_dir / f'image_{image_id[1]}{extension}'
+            if os.path.exists(data_dir / f'img{image_id[1]}{extension}'):
+                image_filepath = data_dir / f'img{image_id[1]}{extension}'
                 image_type = extension
                 break
 

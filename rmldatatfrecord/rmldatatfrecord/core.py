@@ -31,10 +31,7 @@ def tf_record(ctx, create: CreateInput):
 
     associated_files = [ 
         ('meta_', '.json'),
-        ('image_', '.png'),
-        ('image_', '.jpg'),
-        ('image_', '.jpeg'),
-        ('bboxLabels_', '.csv')
+        ('img', '.jpg'),
     ]
 
     metadata_format = ('meta_', '.json')
