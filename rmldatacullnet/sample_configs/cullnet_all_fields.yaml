@@ -1,0 +1,26 @@
+# This sample config contains all fields supported by ravenML core and the TFRecord plugin.
+# Plugin specific configuration is located in the plugin field.
+
+dataset_name: cullnet_ds_test
+# local: False
+imageset: # If local, then full paths to each local imageset
+  - cygnus_re_g_2k
+
+overwrite_local: True
+# dataset_path: '~/Desktop/test' # Default: ~/.ravenML/data_tf-bbox/datasets
+# kfolds: 5
+test_percent: .2
+#upload: False
+#delete_local: True
+metadata:
+    created_by: Jacob Deutsch
+    comments: test
+plugin:
+    verbose: True
+    # tagFilter: False
+    setSizeFilter:
+      cygnus_re_g_2k: 100
+    extra_files:
+      - model.h5
+      - Cygnus_ENHANCED.stl
+
