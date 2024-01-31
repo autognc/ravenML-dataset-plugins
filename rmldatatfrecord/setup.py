@@ -40,6 +40,7 @@ setup(
         'numpy<1.19',
         'tensorflow~=2.3.0',
         'tqdm',
+        'pandas',
     ],
     entry_points=f'''
         [ravenml.plugins.data]
