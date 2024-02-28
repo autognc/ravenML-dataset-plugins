@@ -37,10 +37,13 @@ setup(
     setup_requires=['ravenml'],
     install_requires=[
         'opencv-python',
-        'numpy<1.19',
+        'numpy',
         'tensorflow~=2.3.0',
         'tqdm',
         'pandas',
+        'pillow',
+        'matplotlib',
+        'protobuf==3.20.*'
     ],
     entry_points=f'''
         [ravenml.plugins.data]
